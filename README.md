@@ -1,1 +1,1 @@
-# render-flash-client
+# render-flash-server
