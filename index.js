@@ -1,24 +1,37 @@
 const express = require("express");
-const connection = require("./MogoDB/Config")
+const http = require("http");
+const connection = require("./MogoDB/Config");
 const dotenv = require("dotenv");
-const app = express();
-const cors = require("cors")
+const cors = require("cors");
+
+const initSocket = require("./socket/socket"); // import
 
 dotenv.config();
-
 connection();
 
-app.use(cors({
-    origin:"http://localhost:5173"
-}))
+const app = express();
+
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+  })
+);
 
 app.use(express.json());
 
 /* routes */
 app.use("/api/auth", require("./routes/auth.routes"));
 app.use("/api/user", require("./routes/user.routes"));
+app.use("/api/messages", require("./routes/message.routes"));
 
+// CREATE SERVER
+const server = http.createServer(app);
 
-const PORT = process.env.PORT || 5002
-app.listen(PORT,()=>{console.log(`server is ok on ${PORT}`);
-})
+// INIT SOCKET
+initSocket(server);
+
+const PORT = process.env.PORT || 5002;
+
+server.listen(PORT, () => {
+  console.log(`Server is ok on ${PORT}`);
+});
