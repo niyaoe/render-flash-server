@@ -6,7 +6,7 @@ let io;
 const initSocket = (server) => {
   io = new Server(server, {
     cors: {
-      origin: "https://renderflash-clientside.onrender.com",
+      origin: process.env.CLIENT_URL,
     },
   });
 

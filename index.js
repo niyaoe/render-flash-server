@@ -13,8 +13,8 @@ const app = express();
 
 app.use(
   cors({
-    origin: "https://renderflash-clientside.onrender.com",
-  })
+    origin: process.env.CLIENT_URL,
+  }),
 );
 
 app.use(express.json());
