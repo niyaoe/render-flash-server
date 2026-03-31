@@ -76,6 +76,49 @@ const initSocket = (server) => {
     });
 
     /* =========================
+       🔥 ROOM CHAT (NEW)
+    ========================== */
+
+    // JOIN ROOM
+    socket.on("join_room", (roomId) => {
+      if (!roomId) return;
+
+      socket.join(roomId);
+      console.log(`User ${socket.id} joined room ${roomId}`);
+    });
+
+    // SEND ROOM MESSAGE
+    socket.on("send_room_message", (data) => {
+      try {
+        const { room, user, message, time } = data;
+
+        if (!room || !message || !user) return;
+
+        const messageData = {
+          room,
+          user,
+          message: message.trim(),
+          time,
+        };
+
+        // 🔥 send to others in room
+        socket.to(room).emit("receive_room_message", messageData);
+
+        // 🔥 send back to sender
+        socket.emit("receive_room_message", messageData);
+
+      } catch (err) {
+        console.log(err);
+      }
+    });
+
+    // LEAVE ROOM (optional)
+    socket.on("leave_room", (roomId) => {
+      socket.leave(roomId);
+      console.log(`User left room ${roomId}`);
+    });
+
+    /* =========================
        DISCONNECT
     ========================== */
     socket.on("disconnect", () => {
