@@ -1,6 +1,6 @@
 const User = require("../models/User");
 
-/* GET CURRENT USER */
+/* GET CURRENT USER */   //coworkwith JWT
 exports.getMe = async (req, res) => {
   try {
     res.json(req.user);
