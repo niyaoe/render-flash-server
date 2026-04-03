@@ -23,6 +23,7 @@ app.use(express.json());
 app.use("/api/auth", require("./routes/auth.routes"));
 app.use("/api/user", require("./routes/user.routes"));
 app.use("/api/messages", require("./routes/message.routes"));
+app.use("/api/rooms", require("./routes/room.routes"));
 
 
 // CREATE SERVER
