@@ -2,8 +2,18 @@ const mongoose = require("mongoose");
 
 const messageSchema = new mongoose.Schema(
   {
-    user: String,
-    message: String,
+    room: {
+      type: String,
+      default: "global_room", // keeps global chat working
+    },
+    user: {
+      type: String,
+      required: true,
+    },
+    message: {
+      type: String,
+      required: true,
+    },
     avatar: String,
     time: String,
   },

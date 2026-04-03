@@ -32,11 +32,7 @@ const initSocket = (server) => {
         const { user, message, avatar, time } = data;
 
         // check required fields
-        if (
-          !user ||
-          typeof user !== "string" ||
-          user.trim().length < 2
-        ) {
+        if (!user || typeof user !== "string" || user.trim().length < 2) {
           return console.log("Invalid user");
         }
 
@@ -58,6 +54,7 @@ const initSocket = (server) => {
 
         // 💾 SAVE TO DB
         const savedMessage = await Message.create({
+          room: "global_room", // 🔥 ADD THIS LINE
           user: user.trim(),
           message: cleanMessage,
           avatar: avatar || "",
@@ -69,7 +66,6 @@ const initSocket = (server) => {
 
         // 📡 SEND BACK TO SENDER
         socket.emit("receive_message", savedMessage);
-
       } catch (err) {
         console.log("Socket error:", err);
       }
@@ -88,25 +84,22 @@ const initSocket = (server) => {
     });
 
     // SEND ROOM MESSAGE
-    socket.on("send_room_message", (data) => {
+    socket.on("send_room_message", async (data) => {
       try {
-        const { room, user, message, time } = data;
+        const { room, user, message, avatar, time } = data;
 
-        if (!room || !message || !user) return;
+        if (!room || !user || !message) return;
 
-        const messageData = {
-          room,
+        const savedMessage = await Message.create({
+          room, // 🔥 important
           user,
           message: message.trim(),
-          time,
-        };
+          avatar: avatar || "",
+          time: time || "",
+        });
 
-        // 🔥 send to others in room
-        socket.to(room).emit("receive_room_message", messageData);
-
-        // 🔥 send back to sender
-        socket.emit("receive_room_message", messageData);
-
+        socket.to(room).emit("receive_room_message", savedMessage);
+        socket.emit("receive_room_message", savedMessage);
       } catch (err) {
         console.log(err);
       }
