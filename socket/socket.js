@@ -1,5 +1,6 @@
 const { Server } = require("socket.io");
 const Message = require("../models/Message");
+const Room = require("../models/Room"); // 🔥 NEW
 
 let io;
 
@@ -22,16 +23,14 @@ const initSocket = (server) => {
     });
 
     /* =========================
-       SEND MESSAGE
+       SEND MESSAGE (GLOBAL)
     ========================== */
     socket.on("send_message", async (data) => {
       try {
-        // 🔒 BASIC VALIDATION
         if (!data) return;
 
         const { user, message, avatar, time } = data;
 
-        // check required fields
         if (!user || typeof user !== "string" || user.trim().length < 2) {
           return console.log("Invalid user");
         }
@@ -44,27 +43,19 @@ const initSocket = (server) => {
           return console.log("Invalid message");
         }
 
-        // optional limits (prevents spam)
         if (message.length > 500) {
           return console.log("Message too long");
         }
 
-        // sanitize
-        const cleanMessage = message.trim();
-
-        // 💾 SAVE TO DB
         const savedMessage = await Message.create({
-          room: "global_room", // 🔥 ADD THIS LINE
+          room: "global_room",
           user: user.trim(),
-          message: cleanMessage,
+          message: message.trim(),
           avatar: avatar || "",
           time: time || "",
         });
 
-        // 📡 SEND TO OTHERS
         socket.to("global_room").emit("receive_message", savedMessage);
-
-        // 📡 SEND BACK TO SENDER
         socket.emit("receive_message", savedMessage);
       } catch (err) {
         console.log("Socket error:", err);
@@ -72,15 +63,41 @@ const initSocket = (server) => {
     });
 
     /* =========================
-       🔥 ROOM CHAT (NEW)
+       🔥 ROOM CHAT (UPDATED)
     ========================== */
 
-    // JOIN ROOM
-    socket.on("join_room", (roomId) => {
-      if (!roomId) return;
+    // JOIN ROOM + STORE USERS IN DB
+    socket.on("join_room", async ({ roomId, user }) => {
+      if (!roomId || !user) return;
 
       socket.join(roomId);
-      console.log(`User ${socket.id} joined room ${roomId}`);
+
+      const updatedRoom = await Room.findOneAndUpdate(
+        { roomId },
+        {
+          $pull: { users: { socketId: socket.id } }, // remove old if exists
+        },
+        { new: true, upsert: true },
+      );
+
+      const finalRoom = await Room.findOneAndUpdate(
+        { roomId },
+        {
+          $push: {
+            users: {
+              socketId: socket.id,
+              name: user.name,
+              avatar: user.avatar,
+            },
+          },
+          $setOnInsert: { createdBy: user.name },
+        },
+        { new: true },
+      );
+
+      io.to(roomId).emit("room_users", finalRoom.users);
+
+      console.log(`User ${user.name} joined room ${roomId}`);
     });
 
     // SEND ROOM MESSAGE
@@ -91,7 +108,7 @@ const initSocket = (server) => {
         if (!room || !user || !message) return;
 
         const savedMessage = await Message.create({
-          room, // 🔥 important
+          room,
           user,
           message: message.trim(),
           avatar: avatar || "",
@@ -105,17 +122,47 @@ const initSocket = (server) => {
       }
     });
 
-    // LEAVE ROOM (optional)
-    socket.on("leave_room", (roomId) => {
+    // LEAVE ROOM
+    socket.on("leave_room", async (roomId) => {
       socket.leave(roomId);
-      console.log(`User left room ${roomId}`);
+
+      const room = await Room.findOneAndUpdate(
+        { roomId },
+        {
+          $pull: { users: { socketId: socket.id } },
+        },
+        { new: true },
+      );
+
+      if (room) {
+        io.to(roomId).emit("room_users", room.users);
+      }
     });
 
     /* =========================
-       DISCONNECT
+       DISCONNECT (REMOVE USER)
     ========================== */
-    socket.on("disconnect", () => {
-      console.log("User disconnected:", socket.id);
+    socket.on("disconnect", async () => {
+      try {
+        await Room.updateMany(
+          { "users.socketId": socket.id },
+          {
+            $pull: { users: { socketId: socket.id } },
+          },
+        );
+
+        const rooms = await Room.find({
+          "users.socketId": { $exists: false },
+        });
+
+        for (const room of rooms) {
+          io.to(room.roomId).emit("room_users", room.users);
+        }
+
+        console.log("User disconnected:", socket.id);
+      } catch (err) {
+        console.log(err);
+      }
     });
   });
 
