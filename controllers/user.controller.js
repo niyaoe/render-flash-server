@@ -1,6 +1,7 @@
 const User = require("../models/User");
 
 /* GET CURRENT USER */   //coworkwith JWT
+
 exports.getMe = async (req, res) => {
   try {
     res.json(req.user);
@@ -13,11 +14,12 @@ exports.getMe = async (req, res) => {
 
 exports.updateProfile = async (req, res) => {
   try {
-    const { username, bio, softwares, country, avatar } = req.body;
+    const { username, bio, softwares, country, avatar ,name } = req.body;
 
     const updatedUser = await User.findByIdAndUpdate(
       req.user._id,
       {
+        name,
         username,
         bio,
         softwares,
