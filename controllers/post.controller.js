@@ -5,13 +5,10 @@ const Post = require("../models/Post");
 ========================= */
 exports.createPost = async (req, res) => {
   try {
-    const {
-      user,
-      username,
-      avatar,
-      caption,
-      category,
-    } = req.body;
+    console.log("BODY:", req.body);
+    console.log("FILE:", req.file);
+
+    const { user, username, avatar, caption, category } = req.body;
 
     if (!req.file) {
       return res.status(400).json({
@@ -25,9 +22,7 @@ exports.createPost = async (req, res) => {
       });
     }
 
-    const mediaType = req.file.mimetype.startsWith("video")
-      ? "video"
-      : "image";
+    const mediaType = req.file.mimetype.startsWith("video") ? "video" : "image";
 
     const post = await Post.create({
       user,
@@ -42,17 +37,18 @@ exports.createPost = async (req, res) => {
       mediaType,
     });
 
+    console.log("POST SAVED:", post._id);
+
     res.status(201).json({
       success: true,
       post,
     });
-
   } catch (err) {
     console.log("Create Post Error:", err);
 
     res.status(500).json({
       success: false,
-      msg: "Server Error",
+      msg: err.message,
     });
   }
 };
@@ -62,11 +58,9 @@ exports.createPost = async (req, res) => {
 ========================= */
 exports.getPosts = async (req, res) => {
   try {
-    const posts = await Post.find()
-      .sort({ createdAt: -1 });
+    const posts = await Post.find().sort({ createdAt: -1 });
 
     res.status(200).json(posts);
-
   } catch (err) {
     console.log("Get Posts Error:", err);
 
@@ -82,9 +76,7 @@ exports.getPosts = async (req, res) => {
 ========================= */
 exports.getPost = async (req, res) => {
   try {
-    const post = await Post.findById(
-      req.params.id
-    );
+    const post = await Post.findById(req.params.id);
 
     if (!post) {
       return res.status(404).json({
@@ -93,7 +85,6 @@ exports.getPost = async (req, res) => {
     }
 
     res.status(200).json(post);
-
   } catch (err) {
     console.log("Get Post Error:", err);
 
@@ -109,9 +100,7 @@ exports.getPost = async (req, res) => {
 ========================= */
 exports.deletePost = async (req, res) => {
   try {
-    const post = await Post.findById(
-      req.params.id
-    );
+    const post = await Post.findById(req.params.id);
 
     if (!post) {
       return res.status(404).json({
@@ -119,15 +108,12 @@ exports.deletePost = async (req, res) => {
       });
     }
 
-    await Post.findByIdAndDelete(
-      req.params.id
-    );
+    await Post.findByIdAndDelete(req.params.id);
 
     res.status(200).json({
       success: true,
       msg: "Post deleted",
     });
-
   } catch (err) {
     console.log("Delete Post Error:", err);
 
