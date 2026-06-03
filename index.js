@@ -26,6 +26,20 @@ app.use("/api/messages", require("./routes/message.routes"));
 app.use("/api/rooms", require("./routes/room.routes"));
 app.use("/api/posts", require("./routes/post.routes"));
 
+app.use((err, req, res, next) => {
+  console.log(err);
+
+  if (err.code === "LIMIT_FILE_SIZE") {
+    return res.status(400).json({
+      msg: "File too large. Max 50MB",
+    });
+  }
+
+  res.status(500).json({
+    msg: err.message,
+  });
+});
+
 // CREATE SERVER
 const server = http.createServer(app);
 
