@@ -14,25 +14,50 @@ exports.getMe = async (req, res) => {
 
 exports.updateProfile = async (req, res) => {
   try {
-    const { username, bio, softwares, country, avatar ,name } = req.body;
+    const {
+      username,
+      bio,
+      softwares,
+      country,
+      name,
+    } = req.body;
+
+    let parsedSoftwares = [];
+
+    if (softwares) {
+      parsedSoftwares = JSON.parse(softwares);
+    }
+
+    const updateData = {
+      name,
+      username,
+      bio,
+      country,
+      softwares: parsedSoftwares,
+    };
+
+    // Cloudinary avatar URL
+    if (req.file) {
+      updateData.avatar = req.file.path;
+    }
 
     const updatedUser = await User.findByIdAndUpdate(
       req.user._id,
+      updateData,
       {
-        name,
-        username,
-        bio,
-        softwares,
-        country,
-        avatar,
-      },
-      { new: true }
+        new: true,
+        runValidators: true,
+      }
     ).select("-password");
 
     res.json(updatedUser);
 
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.log(err);
+
+    res.status(500).json({
+      message: err.message,
+    });
   }
 };
 

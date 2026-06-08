@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const protect = require("../middleware/auth.middleware");
+const upload = require("../middleware/upload");
 
 const {
   getMe,
@@ -12,7 +13,8 @@ const {
 
 /* CURRENT USER */
 router.get("/me", protect, getMe);
-router.put("/update", protect, updateProfile);
+
+router.put("/update", protect, upload.single("avatar"), updateProfile);
 
 /* USERS */
 router.get("/all", protect, getAllUsers);
