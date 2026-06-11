@@ -9,6 +9,7 @@ const {
   updateProfile,
   getAllUsers,
   getUserById,
+  followUser,
 } = require("../controllers/user.controller");
 
 /* CURRENT USER */
@@ -16,8 +17,10 @@ router.get("/me", protect, getMe);
 
 router.put("/update", protect, upload.single("avatar"), updateProfile);
 
+router.put("/follow/:id", protect, followUser);
+
 /* USERS */
 router.get("/all", protect, getAllUsers);
-router.get("/:id", protect, getUserById);
+router.get("/profile/:id", protect, getUserById);
 
 module.exports = router;
