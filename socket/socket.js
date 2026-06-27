@@ -31,6 +31,8 @@ const initSocket = (server) => {
 
         const { user, message, avatar, time } = data;
 
+        
+
         if (!user || typeof user !== "string" || user.trim().length < 2) {
           return console.log("Invalid user");
         }
