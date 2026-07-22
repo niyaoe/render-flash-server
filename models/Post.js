@@ -47,7 +47,23 @@ const postSchema = new mongoose.Schema(
       },
     ],
 
-    commentsCount: {
+    comments: [
+      {
+        user: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+        },
+        username: String,
+        avatar: String,
+        text: String,
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+
+    views: {
       type: Number,
       default: 0,
     },
@@ -59,7 +75,7 @@ const postSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 module.exports = mongoose.model("Post", postSchema);

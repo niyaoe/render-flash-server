@@ -123,3 +123,61 @@ exports.deletePost = async (req, res) => {
     });
   }
 };
+
+
+
+
+//like
+
+exports.toggleLike = async (req, res) => {
+  const post = await Post.findById(req.params.id);
+
+  const alreadyLiked = post.likes.includes(req.user.id);
+
+  if (alreadyLiked) {
+    post.likes = post.likes.filter(
+      id => id.toString() !== req.user.id
+    );
+  } else {
+    post.likes.push(req.user.id);
+  }
+
+  await post.save();
+
+  res.json({
+    likes: post.likes.length,
+    liked: !alreadyLiked,
+  });
+};
+
+
+//comment
+exports.addComment = async (req, res) => {
+  const post = await Post.findById(req.params.id);
+
+  post.comments.push({
+    user: req.user.id,
+    username: req.user.username,
+    avatar: req.user.avatar,
+    text: req.body.text,
+  });
+
+  await post.save();
+
+  res.json(post.comments);
+};
+
+
+//view
+
+exports.addView = async (req, res) => {
+  await Post.findByIdAndUpdate(
+    req.params.id,
+    {
+      $inc: { views: 1 },
+    }
+  );
+
+  res.json({ success: true });
+};
+
