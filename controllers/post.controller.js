@@ -58,15 +58,30 @@ exports.createPost = async (req, res) => {
 ========================= */
 exports.getPosts = async (req, res) => {
   try {
-    const posts = await Post.find().sort({ createdAt: -1 });
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
 
-    res.status(200).json(posts);
+    const skip = (page - 1) * limit;
+
+    const totalPosts = await Post.countDocuments();
+
+    const posts = await Post.find()
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    res.json({
+      posts,
+      currentPage: page,
+      totalPages: Math.ceil(totalPosts / limit),
+      totalPosts,
+      hasMore: skip + posts.length < totalPosts,
+    });
   } catch (err) {
-    console.log("Get Posts Error:", err);
+    console.log(err);
 
     res.status(500).json({
-      success: false,
-      msg: "Server Error",
+      message: err.message,
     });
   }
 };
