@@ -196,3 +196,35 @@ exports.addView = async (req, res) => {
   res.json({ success: true });
 };
 
+//userpost
+
+exports.getUserPosts = async (req, res) => {
+  try {
+    const posts = await Post.find({
+      user: req.params.userId,
+    }).sort({ createdAt: -1 });
+
+    res.json(posts);
+  } catch (err) {
+    res.status(500).json({
+      message: err.message,
+    });
+  }
+};
+
+//liked post
+
+exports.getLikedPosts = async (req, res) => {
+  try {
+    const posts = await Post.find({
+      likes: req.params.userId,
+    }).sort({ createdAt: -1 });
+
+    res.json(posts);
+  } catch (err) {
+    res.status(500).json({
+      message: err.message,
+    });
+  }
+};
+
