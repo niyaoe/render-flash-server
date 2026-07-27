@@ -139,9 +139,6 @@ exports.deletePost = async (req, res) => {
   }
 };
 
-
-
-
 //like
 
 exports.toggleLike = async (req, res) => {
@@ -150,9 +147,7 @@ exports.toggleLike = async (req, res) => {
   const alreadyLiked = post.likes.includes(req.user.id);
 
   if (alreadyLiked) {
-    post.likes = post.likes.filter(
-      id => id.toString() !== req.user.id
-    );
+    post.likes = post.likes.filter((id) => id.toString() !== req.user.id);
   } else {
     post.likes.push(req.user.id);
   }
@@ -164,7 +159,6 @@ exports.toggleLike = async (req, res) => {
     liked: !alreadyLiked,
   });
 };
-
 
 //comment
 exports.addComment = async (req, res) => {
@@ -182,16 +176,12 @@ exports.addComment = async (req, res) => {
   res.json(post.comments);
 };
 
-
 //view
 
 exports.addView = async (req, res) => {
-  await Post.findByIdAndUpdate(
-    req.params.id,
-    {
-      $inc: { views: 1 },
-    }
-  );
+  await Post.findByIdAndUpdate(req.params.id, {
+    $inc: { views: 1 },
+  });
 
   res.json({ success: true });
 };
@@ -200,18 +190,35 @@ exports.addView = async (req, res) => {
 
 exports.getUserPosts = async (req, res) => {
   try {
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 12;
+
+    const skip = (page - 1) * limit;
+
+    const totalEdits = await Post.countDocuments({
+      user: req.params.userId,
+    });
+
     const posts = await Post.find({
       user: req.params.userId,
-    }).sort({ createdAt: -1 });
+    })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
 
-    res.json(posts);
+    res.json({
+      posts,
+      totalEdits,
+      currentPage: page,
+      totalPages: Math.ceil(totalEdits / limit),
+      hasMore: skip + posts.length < totalEdits,
+    });
   } catch (err) {
     res.status(500).json({
       message: err.message,
     });
   }
 };
-
 //liked post
 
 exports.getLikedPosts = async (req, res) => {
@@ -227,4 +234,3 @@ exports.getLikedPosts = async (req, res) => {
     });
   }
 };
-
