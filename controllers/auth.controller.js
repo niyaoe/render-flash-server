@@ -3,9 +3,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 
-const {
-  sendVerificationEmail,
-} = require("../utils/sendEmail");
+const { sendVerificationEmail } = require("../utils/sendEmail");
 
 /* =========================
    REGISTER
@@ -49,22 +47,17 @@ exports.register = async (req, res) => {
 
     const salt = await bcrypt.genSalt(10);
 
-    const hashedPassword = await bcrypt.hash(
-      password,
-      salt
-    );
+    const hashedPassword = await bcrypt.hash(password, salt);
 
     // =========================
     // CREATE VERIFICATION TOKEN
     // =========================
 
-    const verificationToken =
-      crypto.randomBytes(32).toString("hex");
+    const verificationToken = crypto.randomBytes(32).toString("hex");
 
     // Token expires after 1 hour
 
-    const verificationExpires =
-      Date.now() + 60 * 60 * 1000;
+    const verificationExpires = new Date(Date.now() + 60 * 60 * 1000);
 
     // =========================
     // CREATE USER
@@ -88,25 +81,20 @@ exports.register = async (req, res) => {
     // VERIFICATION URL
     // =========================
 
-    const verificationUrl =
-      `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
+    const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
 
     // =========================
     // SEND EMAIL
     // =========================
 
-    try {
-      await sendVerificationEmail(
-        user.email,
-        user.username,
-        verificationUrl
-      );
-    } catch (emailError) {
+    console.log("========== VERIFICATION URL ==========");
+    console.log(verificationUrl);
+    console.log("======================================");
 
-      console.log(
-        "Verification email error:",
-        emailError
-      );
+    try {
+      await sendVerificationEmail(user.email, user.username, verificationUrl);
+    } catch (emailError) {
+      console.log("Verification email error:", emailError);
 
       // Remove user if email could not be sent
 
@@ -123,12 +111,16 @@ exports.register = async (req, res) => {
     // =========================
 
     res.status(201).json({
-      message:
-        "Registration successful. Please verify your email.",
+      message: "Registration successful. Please verify your email.",
     });
 
+    console.log("========== REGISTER DEBUG ==========");
+    console.log("EMAIL:", user.email);
+    console.log("GENERATED TOKEN:", verificationToken);
+    console.log("TOKEN SAVED TO DB:", user.emailVerificationToken);
+    console.log("VERIFICATION URL:", verificationUrl);
+    console.log("====================================");
   } catch (err) {
-
     console.log(err);
 
     res.status(500).json({
@@ -136,7 +128,6 @@ exports.register = async (req, res) => {
     });
   }
 };
-
 
 /* =========================
    VERIFY EMAIL
@@ -144,8 +135,10 @@ exports.register = async (req, res) => {
 
 exports.verifyEmail = async (req, res) => {
   try {
-
     const { token } = req.query;
+
+    console.log("========== VERIFY DEBUG ==========");
+    console.log("TOKEN FROM URL:", token);
 
     if (!token) {
       return res.status(400).json({
@@ -153,51 +146,78 @@ exports.verifyEmail = async (req, res) => {
       });
     }
 
-    // =========================
-    // FIND USER
-    // =========================
+    const userByToken = await User.findOne({
+      emailVerificationToken: token,
+    });
 
+    console.log("========== VERIFY DEBUG ==========");
+    console.log("TOKEN FROM URL:", token);
+    console.log("USER FOUND:", !!userByToken);
+
+    if (userByToken) {
+      console.log("DB TOKEN:", userByToken.emailVerificationToken);
+      console.log("DB EXPIRES:", userByToken.emailVerificationExpires);
+      console.log("CURRENT TIME:", new Date());
+      console.log(
+        "EXPIRED:",
+        userByToken.emailVerificationExpires < new Date(),
+      );
+    }
+
+    console.log("==================================");
+
+    // Find user using token
     const user = await User.findOne({
       emailVerificationToken: token,
-
-      emailVerificationExpires: {
-        $gt: Date.now(),
-      },
     });
 
     if (!user) {
       return res.status(400).json({
-        message:
-          "Verification link is invalid or expired",
+        message: "Verification link is invalid or expired",
       });
     }
 
-    // =========================
-    // VERIFY
-    // =========================
+    // Already verified
+    if (user.isVerified) {
+      return res.json({
+        message: "Email is already verified.",
+      });
+    }
 
+    // Check expiration
+    if (
+      !user.emailVerificationExpires ||
+      user.emailVerificationExpires < new Date()
+    ) {
+      return res.status(400).json({
+        message: "Verification link has expired.",
+      });
+    }
+
+    // Verify user
     user.isVerified = true;
-
     user.emailVerificationToken = null;
-
     user.emailVerificationExpires = null;
 
     await user.save();
 
-    res.json({
-      message: "Email verified successfully",
+    console.log("========== VERIFY SUCCESS ==========");
+    console.log("USER VERIFIED:", user.isVerified);
+    console.log("TOKEN AFTER SAVE:", user.emailVerificationToken);
+    console.log("EXPIRES AFTER SAVE:", user.emailVerificationExpires);
+    console.log("====================================");
+
+    return res.json({
+      message: "Email verified successfully.",
     });
-
   } catch (err) {
+    console.log("Verify email error:", err);
 
-    console.log(err);
-
-    res.status(500).json({
+    return res.status(500).json({
       message: err.message,
     });
   }
 };
-
 
 /* =========================
    LOGIN
@@ -205,7 +225,6 @@ exports.verifyEmail = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
-
     const { email, password } = req.body;
 
     // =========================
@@ -228,8 +247,7 @@ exports.login = async (req, res) => {
 
     if (!user.isVerified) {
       return res.status(403).json({
-        message:
-          "Please verify your email before logging in.",
+        message: "Please verify your email before logging in.",
       });
     }
 
@@ -237,10 +255,7 @@ exports.login = async (req, res) => {
     // CHECK PASSWORD
     // =========================
 
-    const isMatch = await bcrypt.compare(
-      password,
-      user.password
-    );
+    const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
       return res.status(400).json({
@@ -259,7 +274,7 @@ exports.login = async (req, res) => {
       process.env.JWT_SECRET,
       {
         expiresIn: "7d",
-      }
+      },
     );
 
     // =========================
@@ -270,9 +285,7 @@ exports.login = async (req, res) => {
       token,
       user,
     });
-
   } catch (err) {
-
     console.log(err);
 
     res.status(500).json({
