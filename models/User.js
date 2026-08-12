@@ -8,6 +8,7 @@ const userSchema = new mongoose.Schema(
       unique: true,
       trim: true,
     },
+
     name: {
       type: String,
       default: "",
@@ -17,11 +18,32 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
+      trim: true,
+      lowercase: true,
     },
 
     password: {
       type: String,
       required: true,
+    },
+
+    // =========================
+    // EMAIL VERIFICATION
+    // =========================
+
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+
+    emailVerificationToken: {
+      type: String,
+      default: null,
+    },
+
+    emailVerificationExpires: {
+      type: Date,
+      default: null,
     },
 
     avatar: {
@@ -33,6 +55,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+
     country: {
       type: String,
       default: "",
@@ -58,7 +81,9 @@ const userSchema = new mongoose.Schema(
       },
     ],
   },
-  { timestamps: true },
+  {
+    timestamps: true,
+  }
 );
 
 module.exports = mongoose.model("User", userSchema);
