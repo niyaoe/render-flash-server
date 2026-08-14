@@ -31,20 +31,20 @@ const userSchema = new mongoose.Schema(
     // EMAIL VERIFICATION
     // =========================
 
-    isVerified: {
-      type: Boolean,
-      default: false,
-    },
+    // isVerified: {
+    //   type: Boolean,
+    //   default: false,
+    // },
 
-    emailVerificationToken: {
-      type: String,
-      default: null,
-    },
+    // emailVerificationToken: {
+    //   type: String,
+    //   default: null,
+    // },
 
-    emailVerificationExpires: {
-      type: Date,
-      default: null,
-    },
+    // emailVerificationExpires: {
+    //   type: Date,
+    //   default: null,
+    // },
 
     avatar: {
       type: String,
