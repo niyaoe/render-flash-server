@@ -1,19 +1,16 @@
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 
-const transporter = nodemailer.createTransport({
-  service: "Gmail",
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD,
-  },
-});
+const sendVerificationEmail = async (
+  email,
+  username,
+  verificationUrl
+) => {
+  const { data, error } = await resend.emails.send({
+    from: "RenderFlash <onboarding@resend.dev>",
 
-const sendVerificationEmail = async (email, username, verificationUrl) => {
-  await transporter.sendMail({
-    from: `"RenderFlash" <${process.env.EMAIL_USER}>`,
-
-    to: email,
+    to: [email],
 
     subject: "Verify your RenderFlash account",
 
@@ -135,6 +132,16 @@ const sendVerificationEmail = async (email, username, verificationUrl) => {
       </html>
     `,
   });
+
+  if (error) {
+    console.error("Resend email error:", error);
+    throw new Error(error.message || "Failed to send verification email");
+  }
+
+  console.log("Verification email sent successfully.");
+  console.log("Resend Email ID:", data?.id);
+
+  return data;
 };
 
 module.exports = {
