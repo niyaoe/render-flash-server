@@ -8,7 +8,7 @@ const sendVerificationEmail = async (
   verificationUrl
 ) => {
   const { data, error } = await resend.emails.send({
-    from: "RenderFlash <onboarding@resend.dev>",
+    from: "RenderFlash <noreply@renderflash.com>",
 
     to: [email],
 
