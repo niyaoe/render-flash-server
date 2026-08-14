@@ -242,14 +242,14 @@ exports.login = async (req, res) => {
     }
 
     // =========================
-    // CHECK EMAIL
+    // CHECK EMAIL (commented on august)
     // =========================
 
-    if (!user.isVerified) {
-      return res.status(403).json({
-        message: "Please verify your email before logging in.",
-      });
-    }
+    // if (!user.isVerified) {
+    //   return res.status(403).json({
+    //     message: "Please verify your email before logging in.",
+    //   });
+    // }
 
     // =========================
     // CHECK PASSWORD
