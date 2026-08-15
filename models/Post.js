@@ -25,8 +25,9 @@ const postSchema = new mongoose.Schema(
     },
 
     category: {
-      type: String,
-      default: "General",
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category",
+      required: true,
     },
 
     media: {

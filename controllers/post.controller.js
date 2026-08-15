@@ -29,13 +29,19 @@ exports.createPost = async (req, res) => {
       username,
       avatar: avatar || "",
       caption: caption?.trim() || "",
-      category: category || "General",
+      category: category,
 
       // Cloudinary URL
       media: req.file.path,
 
       mediaType,
     });
+
+    if (!category) {
+      return res.status(400).json({
+        msg: "Category is required",
+      });
+    }
 
     console.log("POST SAVED:", post._id);
 
@@ -66,6 +72,7 @@ exports.getPosts = async (req, res) => {
     const totalPosts = await Post.countDocuments();
 
     const posts = await Post.find()
+      .populate("category", "name")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -91,7 +98,10 @@ exports.getPosts = async (req, res) => {
 ========================= */
 exports.getPost = async (req, res) => {
   try {
-    const post = await Post.findById(req.params.id);
+    const post = await Post.findById(req.params.id).populate(
+      "category",
+      "name",
+    );
 
     if (!post) {
       return res.status(404).json({
@@ -202,6 +212,7 @@ exports.getUserPosts = async (req, res) => {
     const posts = await Post.find({
       user: req.params.userId,
     })
+      .populate("category", "name")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -225,7 +236,9 @@ exports.getLikedPosts = async (req, res) => {
   try {
     const posts = await Post.find({
       likes: req.params.userId,
-    }).sort({ createdAt: -1 });
+    })
+      .populate("category", "name")
+      .sort({ createdAt: -1 });
 
     res.json(posts);
   } catch (err) {
